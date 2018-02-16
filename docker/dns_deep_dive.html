@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>DNS Deep Dive</title>
+    <meta charset="utf-8">
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body {
+        font-family: 'Droid Serif';
+      }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+      .footnote {
+        position: absolute;
+        bottom: 3em;
+      }
+      li p { line-height: 1.25em; }
+      .red { color: #fa0000; }
+      .large { font-size: 2em; }
+      a, a > code {
+        color: rgb(249, 38, 114);
+        text-decoration: none;
+      }
+      code {
+        background: #e7e8e2;
+        border-radius: 5px;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+      .remark-code-line-highlighted     { background-color: #373832; }
+      .pull-left {
+        float: left;
+        width: 47%;
+      }
+      .pull-right {
+        float: right;
+        width: 47%;
+      }
+      .pull-right ~ p {
+        clear: both;
+      }
+      #slideshow .slide .content code {
+        font-size: 0.8em;
+      }
+      #slideshow .slide .content pre code {
+        font-size: 0.9em;
+        padding: 15px;
+      }
+      .inverse {
+        background: #272822;
+        color: #777872;
+        text-shadow: 0 0 20px #333;
+      }
+      .inverse h1, .inverse h2 .inverse h3 {
+        color: #f3f3f3;
+        line-height: 0.8em;
+      }
+      .white {
+        color: #f3f3f3;
+        line-height: 0.8em;
+      }
+      .rotate {
+        -webkit-transform:rotate(5deg);
+        -moz-transform:rotate(5deg);
+        -o-transform:rotate(5deg);
+
+        -webkit-transition-duration: 0.8s;
+        -moz-transition-duration: 0.8s;
+        -o-transition-duration: 0.8s;
+        transition-duration: 0.8s;
+
+        -webkit-transition-property: -webkit-transform;
+        -moz-transition-property: -moz-transform;
+        -o-transition-property: -o-transform;
+        transition-property: transform;
+
+        overflow:hidden;
+      }
+      .rotate:hover {
+        -webkit-transform:rotate(0deg);
+        -moz-transform:rotate(0deg);
+        -o-transform:rotate(0deg);
+      }
+      .rcli {
+        margin: 10px 50px;
+        padding: 10px 20px;
+        font-family: "Courier New", Courier, monospace;
+        font-size: 90%;
+        background: LightCoral;
+        border: 1px dashed Maroon;
+      }
+      .cli {
+        margin: 10px 50px;
+        padding: 10px 20px;
+        font-family: "Courier New", Courier, monospace;
+        font-size: 90%;
+        background: AliceBlue;
+        border: 1px dashed CadetBlue;
+      }
+      /* Slide-specific styling */
+      #slide-inverse .footnote {
+        bottom: 12px;
+        left: 20px;
+      }
+      #slide-how .slides {
+        font-size: 0.9em;
+        position: absolute;
+        top:  151px;
+        right: 140px;
+      }
+      #slide-how .slides h3 {
+        margin-top: 0.2em;
+      }
+      #slide-how .slides .first, #slide-how .slides .second {
+        padding: 1px 20px;
+        height: 90px;
+        width: 120px;
+        -moz-box-shadow: 0 0 10px #777;
+        -webkit-box-shadow: 0 0 10px #777;
+        box-shadow: 0 0 10px #777;
+      }
+      #slide-how .slides .first {
+        background: #fff;
+        position: absolute;
+        top: 20%;
+        left: 20%;
+        z-index: 1;
+      }
+      #slide-how .slides .second {
+        position: relative;
+        background: #fff;
+        z-index: 0;
+      }
+
+
+      /* Two-column layout */
+      .left-column {
+        color: #777;
+        width: 20%;
+        height: 92%;
+        float: left;
+      }
+        .left-column h2:last-of-type, .left-column h3:last-child {
+          color: #000;
+        }
+      .right-column {
+        width: 75%;
+        float: right;
+        padding-top: 0.3em;
+      }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+name: inverse
+layout: true
+class: center, middle, inverse
+
+---
+template: inverse
+# DNS Deep Dive
+[ @technekes ]
+
+---
+layout: false
+## Overview
+
+.left-column[
+### DNS
+]
+
+.right-column[
+Domain Name System
+* Address book of the internet
+]
+
+--
+.right-column[
+* Translate `www.google.gom` to `X.X.X.X`
+]
+
+--
+.right-column[
+* Distributed storage system for Resource Records (RR)
+]
+
+---
+## Overview
+
+.left-column[
+### DNS
+### RR
+]
+
+.right-column[
+* Each record includes a label, class, type, and data
+]
+
+--
+
+.right-column[
+```
+    Label                   Class   Type    Data
+
+    @                       IN      A       34.198.250.168
+```
+]
+
+--
+
+.right-column[
+* These records describe the characteristics of a zone (domain)
+* The label of an RR is a symbolic domain name used when accessing an Internet resource
+* The class is either IN, CH, HS, or CS; the class of most RRs is IN, which means the Internet system
+* TTL (Time-to-Live)
+]
+
+
+--
+
+.right-column[
+* `tcpdump udp port 53`
+]
+
+---
+## The Lookup
+
+.left-column[
+### Browser
+]
+
+.right-column[
+<img src="assets/images/dns_overview/0.png" width="640" height="360">
+]
+
+---
+## The Lookup
+
+.left-column[
+### Browser
+### OS
+]
+
+.right-column[
+<img src="assets/images/dns_overview/1.png" width="640" height="360">
+]
+
+---
+## The Lookup
+
+.left-column[
+### Browser
+### OS
+]
+
+.right-column[
+<img src="assets/images/aside.png" width="640" height="360">
+]
+
+---
+## The Lookup
+
+.left-column[
+### Browser
+### OS
+### Root
+]
+
+.right-column[
+<img src="assets/images/dns_overview/2.png" width="640" height="360">
+]
+
+---
+## The Lookup
+
+.left-column[
+### Browser
+### OS
+### Root
+### TLD
+]
+
+.right-column[
+<img src="assets/images/dns_overview/3.png" width="640" height="360">
+]
+
+---
+## The Lookup
+
+.left-column[
+### Browser
+### OS
+### Root
+### TLD
+### Authoritative
+]
+
+.right-column[
+<img src="assets/images/dns_overview/4.png" width="640" height="360">
+]
+
+---
+## The Lookup
+
+.left-column[
+### Browser
+### OS
+### Root
+### TLD
+### Authoritative
+]
+
+.right-column[
+<img src="assets/images/dns_overview/5.png" width="640" height="360">
+]
+
+---
+## The Lookup
+
+.left-column[
+### Browser
+### OS
+### Root
+### TLD
+### Authoritative
+### Example
+]
+
+.right-column[
+<img src="assets/images/dns_overview/6.png" width="640" height="360">
+]
+
+---
+## The Lookup
+
+.left-column[
+### Browser
+### OS
+### Root
+### TLD
+### Authoritative
+### Example
+]
+
+.right-column[
+<img src="assets/images/dns_overview/7.png" width="640" height="360">
+]
+
+---
+## The Lookup
+
+.left-column[
+### Browser
+### OS
+### Root
+### TLD
+### Authoritative
+### Example
+]
+
+.right-column[
+<img src="assets/images/dns_overview/8.png" width="640" height="360">
+]
+
+---
+## The Lookup
+
+.left-column[
+### Browser
+### OS
+### Root
+### TLD
+### Authoritative
+### Example
+]
+
+.right-column[
+<img src="assets/images/dns_overview/9.png" width="640" height="360">
+]
+
+---
+## The Lookup
+
+.left-column[
+### Browser
+### OS
+### Root
+### TLD
+### Authoritative
+### Example
+]
+
+.right-column[
+<img src="assets/images/dns_overview/10.png" width="640" height="360">
+]
+
+---
+## The Lookup
+
+.left-column[
+### Browser
+### OS
+### Root
+### TLD
+### Authoritative
+### Example
+]
+
+.right-column[
+<img src="assets/images/dns_overview/11.png" width="640" height="360">
+]
+
+---
+## The Lookup
+
+.left-column[
+### Browser
+### OS
+### Root
+### TLD
+### Authoritative
+### Example
+]
+
+.right-column[
+<img src="assets/images/dns_overview/12.png" width="640" height="360">
+]
+
+---
+## The Lookup
+
+.left-column[
+### Browser
+### OS
+### Root
+### TLD
+### Authoritative
+### Example
+]
+
+.right-column[
+<img src="assets/images/dns_overview/13.png" width="640" height="360">
+]
+
+
+---
+## The Lookup
+
+.left-column[
+### Browser
+### OS
+### Root
+### TLD
+### Authoritative
+### Example
+]
+
+.right-column[
+<img src="assets/images/dns_overview/13.png" width="640" height="360">
+```
+                        dig ruby-lang.org +trace
+```
+]
+---
+
+<img src="assets/images/dns_tree.gif" width="800" height="500">
+
+---
+## Resource Records
+
+.left-column[
+### SOA
+]
+
+.right-column[
+* Start of Authority (SOA)
+* Every domain has one
+* Contains zone information
+]
+
+--
+.right-column[
+```
+@               IN      SOA     ns1.example.com. admin.example.com. (
+        2017052101            ; Serial
+               360            ; Refresh [1h]
+               600            ; Retry   [10m]
+           1209600            ; Expire  [1d]
+              3600            ; Negative Cache TTL [1h]
+)
+```
+]
+
+--
+
+.right-column[
+- `dig technekes.com +nssearch`
+]
+
+---
+## Resource Records
+
+.left-column[
+### SOA
+### A / AAAA
+]
+
+.right-column[
+* Map a hostname to an IP address
+* A record returns a 32-bit IPv4 Address
+* AAAA record returns a 128-bit IPv6 Address
+]
+
+--
+
+.right-column[
+```
+@             IN      A       X.X.X.X
+@             IN      AAAA    2001:0db8:85a3:0000:0000:8a2e:0370:7334
+```
+]
+
+---
+## Resource Records
+
+.left-column[
+### SOA
+### A / AAAA
+### CNAME / Alias
+]
+
+.right-column[
+* Canonical name record
+* Must be pointed to another domain name
+* Usually applied to sub-domains
+]
+
+--
+
+.right-column[
+* Alias records provide CNAME-like behavior for root domains
+]
+
+--
+
+.right-column[
+```
+www            IN      CNAME   example.com.
+@              IN      ALIAS   myapp.heroku.com
+```
+]
+
+---
+## Resource Records
+
+.left-column[
+### SOA
+### A / AAAA
+### CNAME / Alias
+### MX
+]
+
+.right-column[
+* Maps a domain name to a list of message transfer agents for that domain
+]
+
+--
+
+.right-column[
+```
+@            IN      MX      1       ASPMX.L.GOOGLE.COM.
+@            IN      MX      5       ALT1.ASPMX.L.GOOGLE.COM.
+@            IN      MX      5       ALT2.ASPMX.L.GOOGLE.COM.
+@            IN      MX      10      ALT3.ASPMX.L.GOOGLE.COM.
+@            IN      MX      10      ALT4.ASPMX.L.GOOGLE.COM.
+```
+]
+
+---
+## Resource Records
+
+.left-column[
+### SOA
+### A / AAAA
+### CNAME / Alias
+### MX
+### NS
+]
+
+.right-column[
+* Delegates a DNS zone to use the given authoritative name servers
+* glue records
+]
+
+---
+## Resource Records
+
+.left-column[
+### SOA
+### A / AAAA
+### CNAME / Alias
+### MX
+### NS
+]
+
+.right-column[
+<img src="assets/images/dnsimple.png" width="640" height="360">
+]
+
+---
+## Resource Records
+
+.left-column[
+### SOA
+### A / AAAA
+### CNAME / Alias
+### MX
+### NS
+### Other
+]
+
+.right-column[
+* `TXT` : Human readable text DNS entries, more often has machine-readable data.
+* `CAA` : Constrain acceptable CA's for a domain
+* `PTR` : Return .arpa CNAME - primarily for reverse DNS lookups
+* `SRV` : Map host and port number to a target
+* `LOC` : Specifies a geographical location associated with a domain name
+]
+
+--
+
+.right-column[
+* There are 38 Resource Record Types
+]
+
+---
+## Exploits
+
+.left-column[
+### Cache Poisoning
+]
+
+.right-column[
+* Also refered to as DNS spoofing
+* Achieved by placing an incorrect entry into DNS cache
+* Great Firewall
+]
+
+
+---
+## Exploits
+
+.left-column[
+### Cache Poisoning
+### DNS Amplification
+]
+
+.right-column[
+* Reflection based DDoS
+* Spoof lookup requests with a targeted source
+* Response > Query
+* 64 bytes -> 3,223 bytes
+]
+
+---
+## Exploits
+
+.left-column[
+### Cache Poisoning
+### DNS Amplification
+### DNSSEC
+]
+
+.right-column[
+* Set of extensions to DNS
+* Provides origin authentication of DNS data
+* Data integrity
+]
+
+---
+
+## Nginx
+
+    </textarea>
+    <script src="https://gnab.github.io/remark/downloads/remark-latest.min.js">
+    </script>
+    <script>
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
