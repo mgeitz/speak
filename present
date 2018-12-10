@@ -1,0 +1,18 @@
+#! /bin/bash
+
+##
+# Usage: ./present [topic]
+#
+# This assumes the expected file structure is in place:
+#   `speak/topic/topic.html`
+#
+##
+
+if [[ $# -ge 1 ]]; then
+  cd "$1"
+else
+  echo "Usage: ./present [topic]"
+fi
+
+chromium http://localhost/"$1".html
+docker run --rm -v $PWD:/usr/local/apache2/htdocs/ -p 80:80 httpd:alpine

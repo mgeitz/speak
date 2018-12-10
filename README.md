@@ -1,6 +1,12 @@
-# Talks!
+# Speak
 
-To start a talk clone this repo and serve the files:
+Run a slideshow presentation in docker using [Remark](https://github.com/remarkjs/remark)
+
+## 
+
+```
+$ ./bin/present [topic/directory]
+```
 
 ```
 docker                               \
