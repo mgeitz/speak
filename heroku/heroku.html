@@ -168,6 +168,24 @@ template: inverse
 ## and handling secrets
 [ @tkxs ]
 
+
+---
+layout: false
+## Heroku Overview
+
+.left-column[
+### What?
+]
+
+.right-column[
+This is a high level introductory overview of the Heroku platform and its components
+]
+
+--
+.right-column[
+(and a reminder regarding communicating and handling secrets)
+]
+
 ---
 layout: false
 ## Heroku Overview
@@ -376,6 +394,11 @@ Dyno Process Types:
 
 --
 .right-column[
+- Worker dynos can have arbitrary names
+]
+
+--
+.right-column[
 Dyno Commands:
 - Defined in the [Procfile](https://devcenter.heroku.com/articles/procfile)
 ]
@@ -463,7 +486,7 @@ Config Vars:
 ]
 
 .right-column[
-- Some environment variables are platform specific and leverage by the heroku backend
+- Some environment variables are leveraged by the heroku backend for special tasks
 ]
 
 --
@@ -743,7 +766,7 @@ Long-Polling or Streaming Responses:
 
 .right-column[
 The Heroku CLI:
-- The [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli) allows for interacting with the Heroku API via the CLI
+- The [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli) allows for interacting with the [Heroku API](https://devcenter.heroku.com/articles/platform-api-reference) via the CLI
 ]
 
 --
@@ -778,7 +801,7 @@ The Heroku CLI:
 ---
 template: inverse
 # That's it
-
+### https://github.com/mgeitz/speak
 ---
 template: inverse
 # Thanks
