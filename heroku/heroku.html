@@ -186,6 +186,11 @@ This is a high level introductory overview of the Heroku platform and its compon
 (and a reminder regarding communicating and handling secrets)
 ]
 
+--
+.right-column[
+- We have some existing [internal documentation](https://github.com/technekes/documentation/blob/master/devops/heroku/best_practices.md)
+]
+
 ---
 layout: false
 ## Heroku Overview
@@ -445,6 +450,95 @@ Add-on Properties:
 - Supported Languages
 ]
 
+--
+.right-column[
+- Managed Config Vars
+]
+
+---
+## Heroku Overview
+
+.left-column[
+### What?
+### Dynos
+### Add-ons
+]
+
+.right-column[
+Labs and Features:
+]
+
+--
+.right-column[
+- Labs:
+.cli[
+$ heroku labs -a app_name
+]
+]
+
+--
+.right-column[
+- Features:
+.cli[
+$ heroku features -a app_name
+]
+]
+
+---
+## Heroku Overview
+
+.left-column[
+### What?
+### Dynos
+### Add-ons
+]
+
+.right-column[
+Logging:
+- Logs are aggregated from all running dyno processes and backend services
+  - Application logs
+  - System logs
+  - API logs
+  - Add-on logs
+]
+
+--
+.right-column[
+- Logs generated during a build or deployment are seperated from runtime logs
+]
+
+--
+.right-column[
+- Only the last 1,500 lines of logs can be helpd in the heroku logplex buffer for a given application, and persist for a week at most
+]
+
+---
+## Heroku Overview
+
+.left-column[
+### What?
+### Dynos
+### Add-ons
+]
+
+.right-column[
+- Logs are only persisted by a service attaching to a `log drain`
+]
+
+--
+.right-column[
+- There are two types of `log drains`
+  - HTTPS drains
+  - Syslog drains
+]
+
+--
+.right-column[
+.cli[
+$ heroku logs -a app_name
+]
+]
+
 ---
 ## Heroku Overview
 
@@ -629,6 +723,31 @@ Heroku applications combine the set of dynos, add-ons and secrets defined for yo
 ### Add-ons
 ### Secrets
 ### Apps
+]
+
+.right-column[
+  - Pipelines allow for [review apps](https://devcenter.heroku.com/articles/github-integration-review-apps)
+]
+
+--
+.right-column[
+- Review apps are ephemeral applications defined by an [app.json](https://devcenter.heroku.com/articles/github-integration-review-apps#the-app-json-file) file
+]
+
+--
+.right-column[
+- Traditionally, these are leveraged to review `feature` branches prior to merging the feature into `master` in place of a static staging environment
+]
+
+---
+## Heroku Overview
+
+.left-column[
+### What?
+### Dynos
+### Add-ons
+### Secrets
+### Apps
 ### Router
 ]
 
@@ -795,7 +914,10 @@ The Heroku CLI:
 .right-column[
 The Heroku CLI:
 - This is the demo part where I wing it
-- `heroku help`
+
+.cli[
+$ heroku help
+]
 ]
 
 ---
