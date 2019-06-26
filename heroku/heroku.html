@@ -188,7 +188,7 @@ This is a high level introductory overview of the Heroku platform and its compon
 
 --
 .right-column[
-- We have some existing [internal documentation](https://github.com/technekes/documentation/blob/master/devops/heroku/best_practices.md)
+We have some existing [internal documentation](https://github.com/technekes/documentation/blob/master/devops/heroku/best_practices.md)
 ]
 
 ---
@@ -209,12 +209,12 @@ Heroku Components:
 
 --
 .right-column[
-* Heroku and Third Party Add-ons
+* Add-ons, Features, and Logs
 ]
 
 --
 .right-column[
-* Config Variables and Secret Sharing
+* Config Variables
 ]
 
 --
@@ -224,7 +224,7 @@ Heroku Components:
 
 --
 .right-column[
-* The Heroku router
+* The Heroku Router
 ]
 
 --
@@ -298,6 +298,20 @@ Dyno Properties:
 ]
 
 .right-column[
+The Ephemeral Filesystem:
+- Each dyno has access to their own ephemeral filesystem, not shareable between any two dynos
+- The filesystem is wiped any time a dyno restarts (at least once a day)
+]
+
+---
+## Heroku Overview
+
+.left-column[
+### What?
+### Dynos
+]
+
+.right-column[
 Dyno Behavior:
 - Dynos are managed by the [dyno manager](https://devcenter.heroku.com/articles/dynos#the-dyno-manager)
 ]
@@ -314,7 +328,7 @@ Dyno Behavior:
 
 --
 .right-column[
-- All dynos reboot every 24 hours with a 20 minute variance
+- All dynos reboot every 24 hours with a 0-216 minute variance
 ]
 
 --
